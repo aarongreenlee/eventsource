@@ -56,6 +56,7 @@ func (m *memoryStore) Load(ctx context.Context, aggregateID string, fromVersion,
 	}
 
 	history := make(es.History, 0, len(all))
+
 	if len(all) > 0 {
 		for _, record := range all {
 			if v := record.Version; v >= fromVersion && (toVersion == 0 || v <= toVersion) {
@@ -64,5 +65,5 @@ func (m *memoryStore) Load(ctx context.Context, aggregateID string, fromVersion,
 		}
 	}
 
-	return all, nil
+	return history, nil
 }
