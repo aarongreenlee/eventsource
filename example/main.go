@@ -65,4 +65,32 @@ func main() {
 		rsp.Person.ID,
 		rsp.Person.Version,
 	)
+
+	// Read the resource back out left-folding over events to produce
+	// our aggregate.
+	fmt.Printf("Loading the resource and building the aggregate\n\n")
+
+	aggregate, err := personService.Load(ctx, rsp.Person.ID)
+	if err != nil {
+		fmt.Printf(err.Error())
+		os.Exit(1)
+	}
+
+	fmt.Printf(`Loaded Person from Store
+	Name: %q
+	Email: %q
+	ID: %q
+	Version: %d
+	Created By: %q
+	Created By User ID: %q
+	Created At: %q,
+`,
+		aggregate.Name,
+		aggregate.Email,
+		aggregate.ID,
+		aggregate.Version,
+		aggregate.CreateAudit.CreatedBy,
+		aggregate.CreateAudit.CreatedByID,
+		aggregate.CreateAudit.Created,
+	)
 }

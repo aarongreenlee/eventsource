@@ -4,6 +4,7 @@ package memory
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync"
 
@@ -43,8 +44,14 @@ func (m *memoryStore) Save(ctx context.Context, aggregateID string, records ...e
 func (m *memoryStore) Load(ctx context.Context, aggregateID string, fromVersion, toVersion int64) (es.History, error) {
 	m.Lock()
 	defer m.Unlock()
+
 	all, ok := m.eventsByID[aggregateID]
 	if !ok {
+
+		for id := range m.eventsByID {
+			fmt.Printf("asked for %q, found %q\n", aggregateID, id)
+		}
+
 		return nil, es.ErrNotFound
 	}
 

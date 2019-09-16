@@ -155,6 +155,8 @@ func (r *Repository) Save(ctx context.Context, events ...es.Event) error {
 		history = append(history, record)
 	}
 
+	fmt.Printf("saving %q\n\n", aggregateID)
+
 	return r.store.Save(ctx, aggregateID, history...)
 }
 
@@ -191,7 +193,7 @@ func (r *Repository) loadVersion(ctx context.Context, aggregateID string) (es.Ag
 		err = aggregate.On(event)
 		if err != nil {
 			eventType := event.EventType()
-			return nil, 0, fmt.Errorf("repository for %q aggregate was unable to handle event, %v: this is a programming error which may be solved by updating the On function of the repository", r.prototype.Name(), eventType)
+			return nil, 0, fmt.Errorf("repository for %q aggregate was unable to handle event, %v: this is a programming error which may be solved by updating the On function of the repository: error %s", r.prototype.Name(), eventType, err)
 		}
 
 		version = event.EventVersion()
@@ -213,23 +215,8 @@ func (r *Repository) Apply(ctx context.Context, command es.Command) (int64, erro
 	}
 
 	aggregate, version, err := r.loadVersion(ctx, aggregateID)
-	// switch err {
-	// case nil:
-	// 	// do nothing
-	// 	case es.ErrNotFound:
-	// 		aggregate = r.New()
-	// }
 
 	if err != nil {
-
-		// if strings.Contains(err.Error(), "UnhandledEvent") {
-		// 	return 0, err
-		// }
-		//
-		// if strings.Contains(err.Error(), "is nil") {
-		// 	return 0, err
-		// }
-
 		aggregate = r.New()
 	}
 
@@ -247,13 +234,11 @@ func (r *Repository) Apply(ctx context.Context, command es.Command) (int64, erro
 		return -1, es.ErrNoEventsProduced
 	}
 
-	if len(events) > 0 {
-		err = r.Save(ctx, events...)
-		if err != nil {
-			return 0, err
-		}
-		version = events[len(events)-1].EventVersion()
+	err = r.Save(ctx, events...)
+	if err != nil {
+		return 0, err
 	}
+	version = events[len(events)-1].EventVersion()
 
 	// publish events to observers
 	if r.observers != nil {

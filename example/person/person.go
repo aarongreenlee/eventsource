@@ -7,14 +7,16 @@ import (
 	"strings"
 
 	"github.com/aarongreenlee/eventsource"
+	"github.com/aarongreenlee/eventsource/example/audit"
 )
 
 // Person represents our domain resource for this example.
 type Person struct {
-	ID      string
-	Name    string
-	Email   string
-	Version int64
+	ID          string
+	Name        string
+	Email       string
+	Version     int64
+	CreateAudit audit.Create
 }
 
 // ValidateName verifies a name is not empty.
@@ -63,6 +65,13 @@ func (p *Person) Apply(_ context.Context, cmd eventsource.Command) ([]eventsourc
 func (p *Person) On(event eventsource.Event) error {
 	switch event.EventType() {
 	case CreatedEventKey:
+		e, ok := event.(CreateEvent)
+		if !ok {
+			return fmt.Errorf("could not cast for event %q", CreatedEventKey)
+		}
+		if err := e.on(p); err != nil {
+			return err
+		}
 		return nil
 	}
 

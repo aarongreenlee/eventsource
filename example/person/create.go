@@ -90,6 +90,16 @@ type CreateEvent struct {
 	Audit audit.Create
 }
 
+// on folds the CreateEvent into Person to contribute to the aggregate.
+func (e CreateEvent) on(p *Person) error {
+	p.Email = e.Email
+	p.Name = e.Name
+	p.Version = e.Version
+	p.ID = e.ID
+	p.CreateAudit = e.Audit
+	return nil
+}
+
 // AggregateID implements the eventsource.Event interface.
 func (e CreateEvent) AggregateID() string {
 	return e.ID
@@ -143,10 +153,11 @@ func (cmd *CreateCommand) apply(p *Person) ([]eventsource.Event, error) {
 	// Having passed all validations we are ready to produce our event.
 	// At this point, our language will change from "create" to "created".
 	event := &CreateEvent{
+		ID:      cmd.AggregateID(),
 		Name:    cmd.Data.Name,
 		Email:   cmd.Data.Email,
 		Audit:   cmd.Data.Audit,
-		Version: 1,
+		Version: 1, // create events are always v1
 	}
 
 	return []eventsource.Event{event}, nil
