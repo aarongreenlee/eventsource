@@ -24,17 +24,21 @@ func main() {
 	// how you might configure your own service as you initialize.
 	personService, err := person.NewService(
 		// During writes, a serializer converts events to records.
-		// During reads, a serialized converts the record back into the event.
+		// During reads, a serializer converts the record back into the event.
 		repository.WithSerializer(&gob.Serializer{}),
+
 		// A store reads/writes records.
 		repository.WithStore(memory.New()),
+
 		// Observers are called when a command is successfully applied and
 		// an event emitted. This would be a good hook to help subscribers
-		// learn about state changes if you subscriptions over websockets
-		// for example. In this example, we'll simply log.
+		// learn about state changes if you have subscriptions over websockets
+		// for example. In this example, we'll simply log to demonstrate.
 		repository.WithObservers(func(event eventsource.Event) {
 			switch v := event.(type) {
 			case *person.CreateEvent:
+				// The event represents all of the data stored for and includes
+				// more than what we log here.
 				fmt.Printf("Event %q Observed\n\tName %q\n\tEmail: %q\n\n", event.EventType(), v.Name, v.Email)
 			}
 		}),
@@ -48,7 +52,8 @@ func main() {
 	// work flow!
 	ctx := session.Stub(context.Background()) // simulate a session
 
-	fmt.Printf("Issuing command to Create Person...\n\n")
+	fmt.Printf("Request issues a command to Create Person...\n\n")
+
 	rsp, err := personService.Create(ctx, person.CreateRequest{
 		Name:  "Big Bird",
 		Email: "b.bird@seasame-street.com",
@@ -58,13 +63,6 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-
-	fmt.Printf(
-		"Response\n\tName: %q\n\tID: %q\n\tVersion: %d\n\n",
-		rsp.Person.Name,
-		rsp.Person.ID,
-		rsp.Person.Version,
-	)
 
 	// Read the resource back out left-folding over events to produce
 	// our aggregate.

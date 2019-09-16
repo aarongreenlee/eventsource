@@ -155,8 +155,6 @@ func (r *Repository) Save(ctx context.Context, events ...es.Event) error {
 		history = append(history, record)
 	}
 
-	fmt.Printf("saving %q\n\n", aggregateID)
-
 	return r.store.Save(ctx, aggregateID, history...)
 }
 
