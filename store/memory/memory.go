@@ -29,6 +29,7 @@ func New() *memoryStore {
 func (m *memoryStore) Save(ctx context.Context, aggregateID string, records ...es.Record) error {
 	m.Lock()
 	defer m.Unlock()
+
 	if _, ok := m.eventsByID[aggregateID]; !ok {
 		m.eventsByID[aggregateID] = es.History{}
 	}
